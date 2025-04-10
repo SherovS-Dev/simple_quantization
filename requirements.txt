@@ -1,0 +1,9 @@
+datasets
+torch~=2.6.0
+torchvision
+scikit-learn~=1.6.1
+pandas~=2.2.3
+onnxruntime~=1.21.0
+onnx2pytorch~=0.5.1
+onnx~=1.17.0
+numpy~=2.2.4
