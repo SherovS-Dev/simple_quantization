@@ -4,14 +4,22 @@
 
 ## Структура проекта
 ```
+├── my_model/
+│   └── IMDB Dataset.csv  # Пример набора данных
 ├── src/
 │   ├── data.py       # Загрузка и предобработка данных IMDB
 │   ├── model.py      # Определение модели SentimentNet
 │   └── train.py      # Обучение модели SentimentNet
+├── main.py # Пример обучения и предсказания
+├── convert_to_onnx.py # Конвертация модели .pth в .onnx
+├── convert_to_pth.py # Конвертация модели .onnx в .pth
 ├── optimize_model.py # Анализ и квантизация моделей
-├── IMDB Dataset.csv  # Пример набора данных (не включен в репозиторий)
-└── README.md         # Этот файл
+├── predict.py # Предсказание с использованием модели .pth
+├── predict_with_onnx.py # Предсказание с использованием модели .onnx
+├── requirements.txt # Зависимости проекта
+└── README.md
 ```
+
 
 ### Описание файлов
 
@@ -25,41 +33,48 @@
   Реализует обучение модели `SentimentNet` на данных IMDB и сохранение обученной модели в файл `.pth`.
 
 - **`optimize_model.py`**:  
-  Основной скрипт для анализа и квантизации моделей. Поддерживает:
-  - Анализ характеристик моделей `.pth` и `.onnx` (веса, размеры, типы данных).
-  - Квантизацию `.pth` методами `dynamic`, `static`, `qat`.
+  Основной скрипт для анализа и квантизации моделей. Поддерживает:  
+  - Анализ характеристик моделей `.pth` и `.onnx` (веса, размеры, типы данных).  
+  - Квантизацию `.pth` методами `dynamic`, `static`, `qat`.  
   - Квантизацию `.onnx` методами `dynamic`, `static`.
 
-- **`IMDB Dataset.csv`**:  
+- **`predict.py`**:  
+  Скрипт для предсказания тональности текста с использованием модели `.pth`.
+
+- **`convert_to_onnx.py`**:  
+  Конвертирует модель `.pth` в формат `.onnx`.
+
+- **`convert_to_pth.py`**:  
+  Конвертирует модель `.onnx` в формат `.pth`.
+
+- **`predict_onnx.py`**:  
+  Скрипт для предсказания тональности текста с использованием модели `.onnx`.
+
+- **`requirements.txt`**:  
+  Содержит список зависимостей проекта.
+
+- **`main.py`**:  
+  Пример использования: обучение модели и предсказание.
+
+- **`my_model/IMDB Dataset.csv`**:  
   Ожидаемый файл с данными (не включен). Должен содержать колонки `review` (текст отзыва) и `sentiment` (метка: `positive` или `negative`).
 
 ## Установка
 
 1. Установите зависимости:
    ```bash
-   pip install torch pandas scikit-learn numpy onnx onnxruntime
+   pip install -r requirements.txt
    ```
-
-2. Убедитесь, что у вас есть файл IMDB Dataset.csv в корневой папке или укажите путь к нему в скриптах.
 
 ## Использование
 
 ### 1. Обучение модели
+Используйте `main.py` для обучения модели::
+```bash
+  python main.py
+  ```
 
-Используйте `src/train.py` для обучения модели:
-    ```bash
-    python src/train.py
-    ```
-
-- Аргументы по умолчанию:
-  - file_path="IMDB Dataset.csv"
-  - model_path="sentiment_model.pth"
-  - epochs=10
-  - batch_size=32
-  - max_samples=50000
-  - max_features=5000
-
-После выполнения модель сохранится в файл `sentiment_model.pth`.
+- Обучает модель и сохраняет ее в `my_model/sentiment_model.pth`.
 
 ### 2. Анализ модели
 
@@ -74,36 +89,19 @@
     Выберите действие (анализ или квантизация): анализ
     ```
 
-- Пример вывода:
-    ```text
-    Анализ модели: sentiment_model.pth
-    Parameter: fc1.weight, Shape: torch.Size([128, 5000]), Data Type: torch.float32
-    Parameter: fc1.bias, Shape: torch.Size([128]), Data Type: torch.float32
-    Parameter: fc2.weight, Shape: torch.Size([1, 128]), Data Type: torch.float32
-    Parameter: fc2.bias, Shape: torch.Size([1]), Data Type: torch.float32
-    Общее количество параметров: 640641
-    Общий размер модели: 2.44 MB
-    Модель не квантизована
-    ```
-  
 ### 3. Квантизация модели
-Для `.pth` <br>
-Поддерживаются методы: `dynamic`, `static`, `qat`.
-- Пример с методом QAT:
+Используйте optimize_model.py для квантизации:
+- Для `.pth`:
     ```text
     Введите тип модели (pth или onnx): pth
-    Введите путь к модели: sentiment_model.pth
+    Введите путь к модели: my_model/sentiment_model.pth
     Выберите действие (анализ или квантизация): квантизация
     Введите размерность входных данных (например, 5000): 5000
-    Выберите метод квантизации (dynamic, static, qat): qat
-    Введите путь для сохранения квантизованной модели: quant_model_with_qat.pth
+    Выберите метод квантизации (dynamic, static, qat): dynamic
+    Введите путь для сохранения квантизованной модели: my_model/quant_model.pth
     ```
 
-Метод QAT требует переобучения модели с использованием train_loader, который загружается из `src/data.py`.
-
-Для `.onnx` <br>
-Поддерживаются методы: `dynamic`, `static`.
-- Пример с методом static:
+- Для `.onnx`:
     ```text
     Введите тип модели (pth или onnx): onnx
     Введите путь к модели: sentiment_model.onnx
@@ -111,8 +109,29 @@
     Выберите метод квантизации (dynamic, static): static
     Введите путь для сохранения квантизованной модели: quant_model_with_static.onnx
     ```
-  Метод `static` требует калибровочных данных, которые загружаются из `IMDB Dataset.csv`.
 
+### 4. Предсказание
+- Для `.pth` используйте `predict.py`:
+  ```bash
+  python predict.py
+  ```
+  
+- Для `.onnx` используйте `predict_onnx.py`:
+  ```bash
+  python predict_onnx.py
+  ```
+  
+### 4. Конвертация моделей
+- Конвертация `.pth` в `.onnx`:
+  ```bash
+  python convert_to_onnx.py
+  ```
+  
+- Конвертация `.onnx` в `.pth`:
+  ```bash
+  python convert_to_pth.py
+  ```
+  
 Примечания
 - QAT для .pth: Требует обучающих данных и переобучения. Убедитесь, что IMDB Dataset.csv доступен.
 - Ошибки: Если модель уже квантизована, скрипт сообщит об этом и выведет ее характеристики.
